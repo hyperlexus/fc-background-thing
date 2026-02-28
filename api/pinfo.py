@@ -3,28 +3,26 @@ from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)
 
 
-@app.route('/api/pinfo', methods=['POST', 'OPTIONS'])
+@app.route('/api/pinfo', methods=['POST'])
 def get_pinfo():
-    try:
-        requests.get("https://google.com", timeout=2)
-    except Exception as e:
-        return jsonify({"error": "Vercel has no internet access", "details": str(e)}), 500
+    data = request.get_json(force=True)
+    pid = data.get('pid')
+    headers = {'User-Agent': 'Mozilla/5.0'}
+
+    print(f"Testing PID: {pid} from my IP...")
 
     try:
-        data = request.get_json()
-        pid = data.get('pid')
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-        response = requests.post("https://rwfc.net/api/pinfo", json={"pid": pid}, headers=headers, timeout=5)
+        response = requests.post("https://rwfc.net/api/pinfo", json={"pid": pid}, headers=headers, timeout=10)
+        print(f"Status Code: {response.status_code}")
         return jsonify(response.json())
-    except requests.exceptions.Timeout:
-        return jsonify({"error": "rwfc.net blocked the request or timed out"}), 504
     except Exception as e:
-        return jsonify({"error": "Internal Python Error", "details": str(e)}), 500
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
-    app.run(port=3000)
+    # Running on 0.0.0.0 makes it accessible to your whole local network
+    app.run(host='0.0.0.0', port=5000)
