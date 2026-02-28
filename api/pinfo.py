@@ -1,19 +1,21 @@
-from http.server import BaseHTTPRequestHandler
-import json
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import requests
 
+app = Flask(__name__)
+CORS(app)
 
-class Handler(BaseHTTPRequestHandler):
-    def do_post(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        data = json.loads(post_data)
-        pid = data.get('pid')
 
+@app.route('/api/pinfo', methods=['POST'])
+def get_pinfo():
+    data = request.get_json()
+    pid = data.get('pid')
+
+    try:
         response = requests.post("http://rwfc.net/api/pinfo", json={"pid": pid})
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.end_headers()
-        self.wfile.write(json.dumps(response.json()).encode())
+if __name__ == '__main__':
+    app.run(port=3000)
